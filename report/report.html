@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoChain Analyzer Dashboard – Final Report</title>
+<style>
+  /* ── Page setup ── */
+  @page { size: A4; margin: 22mm 20mm 22mm 20mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 170mm;
+    margin: 0 auto;
+    padding: 10mm 0;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    font-size: 8pt;
+    color: #777;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+    margin-bottom: 18px;
+  }
+
+  /* ── Title block ── */
+  h1.report-title {
+    font-size: 22pt;
+    font-weight: 900;
+    color: #111;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 10pt;
+    color: #444;
+    margin-bottom: 2px;
+  }
+  .author-line {
+    font-size: 10pt;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 18px;
+  }
+  hr.rule { border: none; border-top: 2px solid #ddd; margin: 16px 0; }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 14pt;
+    font-weight: 800;
+    color: #1a1a1a;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 3px;
+    margin: 22px 0 10px 0;
+  }
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #2563eb;
+    margin: 14px 0 6px 0;
+  }
+
+  /* ── Body text ── */
+  p { margin-bottom: 8px; }
+  ul { margin: 6px 0 8px 20px; }
+  li { margin-bottom: 3px; }
+
+  /* ── Code blocks ── */
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9pt;
+    background: #f4f6fa;
+    border: 1px solid #dde1ea;
+    border-radius: 3px;
+    padding: 0 3px;
+  }
+  pre {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 9pt;
+    background: #f4f6fa;
+    border: 1px solid #dde1ea;
+    border-left: 4px solid #3b82f6;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    overflow-x: auto;
+    color: #1e40af;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 14px 0;
+    font-size: 9.5pt;
+  }
+  thead tr { background: #1e3a5f; color: #fff; }
+  thead th { padding: 6px 10px; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #f4f7fb; }
+  tbody td { padding: 5px 10px; border-bottom: 1px solid #dde1ea; }
+  tbody tr:last-child td { border-bottom: 2px solid #3b82f6; }
+
+  /* ── Highlight box ── */
+  .highlight {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #3b82f6;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 9.5pt;
+  }
+
+  /* ── Page break ── */
+  .page-break { page-break-before: always; }
+
+  /* ── References ── */
+  ol.refs { padding-left: 20px; }
+  ol.refs li { margin-bottom: 6px; font-size: 9.5pt; }
+
+  /* ── Footer ── */
+  .page-footer {
+    font-size: 8pt;
+    color: #999;
+    border-top: 1px solid #ccc;
+    padding-top: 4px;
+    margin-top: 18px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Running header ── -->
+<div class="page-header">
+  CryptoChain Analyzer Dashboard &nbsp;·&nbsp; Enrique Santamaría Ruiz &nbsp;·&nbsp; UAX Cryptography 2025–26
+</div>
+
+<!-- ── Title block ── -->
+<h1 class="report-title">CryptoChain Analyzer Dashboard</h1>
+<p class="subtitle">Final Project Report — Hash Functions and Blockchain</p>
+<p class="subtitle">Cryptography | Universidad Alfonso X el Sabio | Prof. Jorge Calvo | AY 2025–26</p>
+<p class="author-line">Enrique Santamaría Ruiz &nbsp;·&nbsp; esantrui &nbsp;·&nbsp; May 2026</p>
+
+<hr class="rule">
+
+<!-- ────────────────────────────────────── -->
+<h2>1&nbsp; Introduction</h2>
+
+<p>
+This report documents the <em>CryptoChain Analyzer Dashboard</em>, a real-time Python dashboard built
+with Streamlit that connects to public Bitcoin blockchain APIs and displays live cryptographic metrics.
+The project was developed as the individual assessment for the Cryptography course at
+Universidad Alfonso X el Sabio (AY&nbsp;2025–26), under the supervision of Prof.&nbsp;Jorge Calvo.
+</p>
+
+<p>
+The dashboard implements all four required modules (M1–M4). Data is sourced from three free public
+APIs — Blockstream, Blockchain.info, and the Blockchain.info Charts API — and the page
+auto-refreshes every 60&nbsp;seconds so all metrics remain live without manual intervention.
+</p>
+
+<!-- ────────────────────────────────────── -->
+<h2>2&nbsp; Cryptographic Metrics</h2>
+
+<h3>2.1&nbsp; SHA-256d and Proof of Work (M1, M2)</h3>
+
+<p>
+<strong>SHA-256d</strong> — double SHA-256 — is Bitcoin's standard cryptographic hash:
+<code>SHA256(SHA256(data))</code>.
+Bitcoin's Proof-of-Work (PoW) requires miners to find a nonce such that
+<code>SHA256d(header) ≤ target</code>.
+The 80-byte block header contains six fields, all stored in <strong>little-endian</strong> byte order:
+</p>
+<ul>
+  <li><strong>version</strong> (4 B) — signals which BIP consensus rules apply</li>
+  <li><strong>previous block hash</strong> (32 B) — SHA-256d of the preceding header; the chain link</li>
+  <li><strong>Merkle root</strong> (32 B) — root of the transaction hash tree</li>
+  <li><strong>timestamp</strong> (4 B) — Unix epoch in seconds</li>
+  <li><strong>bits</strong> (4 B) — compact encoding of the 256-bit PoW target threshold</li>
+  <li><strong>nonce</strong> (4 B) — miner-controlled counter iterated until the hash is valid</li>
+</ul>
+
+<p>
+Module M2 parses all six fields and verifies the PoW <em>locally</em> using Python's built-in
+<code>hashlib</code> and <code>struct</code> modules — no external cryptographic library is used.
+The verification proceeds in six explicit steps: (1) reconstruct the 80-byte header from the
+API fields, (2) compute SHA256(header), (3) compute SHA256 again, (4) reverse bytes to
+display order, (5) compare with the API-returned hash, (6) confirm the result is numerically
+less than the decoded target.
+</p>
+
+<div class="highlight">
+  <strong>bits → target decoding:</strong> The <code>bits</code> field encodes the target as a compact number:<br><br>
+  <code>target = coefficient × 2^(8 × (exponent − 3))</code><br><br>
+  where <code>exponent = bits &gt;&gt; 24</code> and <code>coefficient = bits &amp; 0x00FFFFFF</code>.
+  A valid hash, interpreted as a 256-bit unsigned integer, must be ≤ target.
+  At current difficulty, approximately 79 leading bits must be zero, so the probability of
+  any single hash attempt succeeding is roughly 2<sup>−79</sup>.
+</div>
+
+<table>
+  <thead>
+    <tr><th>Field</th><th>Example value</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>bits (hex)</td><td><code>0x17021FF0</code></td><td>Compact target stored in block header</td></tr>
+    <tr><td>Exponent byte</td><td><code>0x17 = 23</code></td><td>target = coeff × 2<sup>8×(23−3)</sup> = coeff × 2<sup>160</sup></td></tr>
+    <tr><td>Coefficient</td><td><code>0x021FF0</code></td><td>Mantissa of the compact representation</td></tr>
+    <tr><td>Full 256-bit target</td><td><code>00000000021FF0…00</code></td><td>Hash must be ≤ this value</td></tr>
+    <tr><td>Leading zero bits</td><td>~79 / 256</td><td>P(valid hash) ≈ 2<sup>−79</sup></td></tr>
+  </tbody>
+</table>
+
+<h3>2.2&nbsp; Difficulty and Network Hash Rate (M1, M3)</h3>
+
+<p>
+The difficulty value is derived from the target by comparing it to the genesis block target
+(<code>bits = 0x1d00ffff</code>):
+</p>
+<pre>difficulty = genesis_target / current_target</pre>
+
+<p>
+The estimated network hash rate follows directly from the expected number of hashes per block
+and the 600-second target block time:
+</p>
+<pre>hashrate ≈ difficulty × 2³² / 600   [H/s]</pre>
+
+<p>
+At current difficulty (~1.1 × 10<sup>14</sup>) this yields a network hash rate of approximately
+<strong>790 EH/s</strong> (exahashes per second), consistent with public mining pool statistics.
+</p>
+
+<p>
+Bitcoin adjusts difficulty every 2,016 blocks (≈ 14 days) so that the average inter-block time
+stays close to 600 seconds:
+</p>
+<pre>new_difficulty = old_difficulty × (actual_time_for_2016_blocks / 1,209,600 s)</pre>
+
+<p>
+The ratio is clamped to [¼, 4] to prevent extreme swings.
+Module M3 charts this history, marks each adjustment event with a diamond marker,
+and plots the block-time ratio per epoch derived analytically from consecutive
+difficulty values: <code>actual_block_time / 600 = D<sub>old</sub> / D<sub>new</sub></code>.
+</p>
+
+<h3>2.3&nbsp; Inter-Block Time Distribution (M1)</h3>
+
+<p>
+Module M1 fetches timestamps for the last 50 blocks via the Blockstream API and plots the
+distribution of inter-block arrival times. The expected distribution is
+<strong>Exponential(λ = 1/600)</strong> because:
+</p>
+<ul>
+  <li>Each SHA-256 hash attempt is an independent Bernoulli trial with probability
+      p&nbsp;≈&nbsp;1&nbsp;/&nbsp;(difficulty&nbsp;×&nbsp;2<sup>32</sup>) of success.</li>
+  <li>The number of attempts until success is Geometric(p), which for large n and small p
+      converges to an Exponential distribution.</li>
+  <li>The network self-adjusts so the mean inter-arrival time stays at 10 minutes.</li>
+</ul>
+<p>
+The histogram is overlaid with both the theoretical Exp(λ = 1/10 min) curve and an empirical
+fit, confirming the Poisson-process nature of Bitcoin mining.
+</p>
+
+<!-- ────────────────────────────────────── -->
+<div class="page-break"></div>
+<div class="page-header">
+  CryptoChain Analyzer Dashboard &nbsp;·&nbsp; Enrique Santamaría Ruiz &nbsp;·&nbsp; UAX Cryptography 2025–26
+</div>
+
+<h2>3&nbsp; AI Component — M4: Difficulty Predictor</h2>
+
+<h3>3.1&nbsp; Problem Statement</h3>
+
+<p>
+The goal of Module M4 is to <strong>predict the next Bitcoin mining difficulty adjustment value</strong>
+using a time-series model trained on historical difficulty data fetched from the
+Blockchain.info Charts API. An accurate forecast helps miners and analysts anticipate
+profitability changes before the next 2,016-block epoch closes.
+</p>
+
+<h3>3.2&nbsp; Model Choice and Justification</h3>
+
+<p>
+Four models are implemented and compared on a holdout set (last 20% of data, no shuffle):
+</p>
+
+<table>
+  <thead>
+    <tr><th>Model</th><th>Rationale</th><th>Key parameter</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>ARIMA(1,2,1)</strong></td>
+      <td>Double-differencing removes Bitcoin's strong upward trend, making the series
+          stationary. AR(1) captures first-order autocorrelation in difficulty changes.</td>
+      <td>d = 2 (integrated order)</td>
+    </tr>
+    <tr>
+      <td><strong>SARIMA(0,2,1)×(0,1,1,7)</strong></td>
+      <td>Extends ARIMA with a seasonal component (period = 7 days) to capture
+          weekly mining pool patterns. Falls back to SARIMA(1,1,1) if convergence fails.</td>
+      <td>Seasonal period s = 7</td>
+    </tr>
+    <tr>
+      <td><strong>Holt-Winters</strong></td>
+      <td>Explicit triple-exponential smoothing (additive trend + additive seasonality).
+          Handles non-stationary series well and tends to be robust for medium horizons.</td>
+      <td>seasonal_periods = 7</td>
+    </tr>
+    <tr>
+      <td><strong>Linear Regression</strong></td>
+      <td>Global trend baseline — fits a straight line through the time index.
+          Interpretable and computationally cheap. Useful as a benchmark.</td>
+      <td>deg = 1 (OLS)</td>
+    </tr>
+    <tr>
+      <td><strong>Ensemble</strong></td>
+      <td>Simple average of ARIMA, Holt-Winters, and Linear Regression forecasts.
+          Reduces model-specific variance; recommended for general use.</td>
+      <td>Equal weights (1/3 each)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+<strong>Why time-series models over deep learning?</strong> LSTM and Prophet require substantially
+more data and longer training time. The difficulty series, sampled approximately daily, provides
+~180 training points — sufficient for ARIMA/ETS-class models but borderline for neural approaches.
+The ensemble strategy further reduces the risk of any single model's bias dominating the forecast.
+</p>
+
+<h3>3.3&nbsp; Evaluation Results</h3>
+
+<p>
+Each model is trained on the first 80% of data and evaluated on a 30-day holdout set. Confidence
+intervals are ±1σ of in-sample residuals, expanding linearly with the forecast horizon.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Model</th><th>MAE</th><th>RMSE</th><th>MAPE (%)</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ARIMA(1,2,1)</td>
+      <td>1.36 × 10<sup>13</sup></td>
+      <td>1.60 × 10<sup>13</sup></td>
+      <td>10.17 %</td>
+      <td>Overreacts to short-term volatility</td>
+    </tr>
+    <tr>
+      <td>SARIMA</td>
+      <td>≈ ARIMA</td>
+      <td>≈ ARIMA</td>
+      <td>≈ 10 %</td>
+      <td>Seasonal term has limited effect on difficulty</td>
+    </tr>
+    <tr>
+      <td>Holt-Winters</td>
+      <td>4.79 × 10<sup>12</sup></td>
+      <td>5.38 × 10<sup>12</sup></td>
+      <td>3.59 %</td>
+      <td>Best among single models on this period</td>
+    </tr>
+    <tr>
+      <td><strong>Linear Regression</strong></td>
+      <td><strong>1.32 × 10<sup>12</sup></strong></td>
+      <td><strong>1.73 × 10<sup>12</sup></strong></td>
+      <td><strong>0.97 %</strong></td>
+      <td>Best overall — difficulty trended linearly on this 180-day window</td>
+    </tr>
+    <tr>
+      <td>Ensemble</td>
+      <td>5.98 × 10<sup>12</sup></td>
+      <td>7.01 × 10<sup>12</sup></td>
+      <td>4.48 %</td>
+      <td>More robust across different periods</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="highlight">
+  <strong>Interpretation:</strong> Linear Regression achieves the lowest MAPE (0.97%) on the
+  30-day holdout because Bitcoin difficulty has followed an approximately linear upward trend
+  over the last 180 days. The Ensemble model sacrifices some in-sample accuracy for better
+  generalization when the regime changes (e.g., sudden hash-rate drops or hash-rate surges).
+  The dashboard presents all five models with their holdout metrics so the user can choose
+  the most appropriate one for their time horizon.
+</div>
+
+<h3>3.4&nbsp; Anomaly Detection (M4 — built-in)</h3>
+
+<p>
+An anomaly detector is integrated into M4. For each data point in the difficulty series, a
+<strong>Z-score</strong> is computed:
+</p>
+<pre>z = (D_i − μ) / σ</pre>
+<p>
+Points with |z| ≥ threshold (default 2.0) are flagged as anomalies and displayed as red
+triangles on the forecast chart. In the difficulty context, anomalies correspond to unusually
+large or small adjustment events — possible indicators of sudden hash-rate changes, mining pool
+exits, or coordinated attacks on the network.
+</p>
+
+<!-- ────────────────────────────────────── -->
+<h2>4&nbsp; Technical Implementation</h2>
+
+<p>
+The dashboard is built with Streamlit using a sidebar navigation structure with five pages
+(Overview + M1–M4). Charts are rendered with Plotly (<code>graph_objects</code>).
+The project has <strong>no external cryptographic dependencies</strong>: all SHA-256 operations
+use Python's built-in <code>hashlib</code> and <code>struct</code> modules.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Component</th><th>Details</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>APIs</strong></td>
+      <td>Blockstream (block data, raw headers, recent block timestamps);
+          Blockchain.info (rawblock, latestblock);
+          Blockchain.info Charts (difficulty history, avg-confirmation-time)</td>
+    </tr>
+    <tr>
+      <td><strong>Machine Learning</strong></td>
+      <td>statsmodels ARIMA, SARIMAX, ExponentialSmoothing; numpy polyfit (Linear Regression)</td>
+    </tr>
+    <tr>
+      <td><strong>Frontend</strong></td>
+      <td>Streamlit, Plotly graph_objects, custom dark-theme CSS with gradient header</td>
+    </tr>
+    <tr>
+      <td><strong>Cryptography</strong></td>
+      <td>hashlib.sha256 (SHA-256d), struct (little-endian header parsing) — no external library</td>
+    </tr>
+    <tr>
+      <td><strong>Auto-refresh</strong></td>
+      <td>60-second non-blocking refresh (<code>time.sleep(60) + st.rerun()</code>); M1 uses
+          session-state caching with 60-second TTL for live data</td>
+    </tr>
+    <tr>
+      <td><strong>Error handling</strong></td>
+      <td>All API calls wrapped in try/except; stale cached data used as fallback when network
+          is unavailable. M3 loads data into session state so it persists across auto-refreshes.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ────────────────────────────────────── -->
+<h2>5&nbsp; References</h2>
+
+<ol class="refs">
+  <li>
+    Nakamoto, S. (2008). <em>Bitcoin: A Peer-to-Peer Electronic Cash System</em>.
+    <code>https://bitcoin.org/bitcoin.pdf</code>.
+    Cited for §6 (mining incentives), §7 (recalculation of difficulty), and §11 (attack probability).
+  </li>
+  <li>
+    Blockstream. <em>Esplora REST API Documentation</em>.
+    <code>https://github.com/Blockstream/esplora/blob/master/API.md</code>.
+    Used for block raw headers, recent block timestamps (M1, M2).
+  </li>
+  <li>
+    Blockchain.com. <em>Charts API — Difficulty and Hash Rate</em>.
+    <code>https://www.blockchain.com/explorer/charts</code>.
+    Used for historical difficulty data and average confirmation time (M3, M4).
+  </li>
+  <li>
+    Seabold, S. &amp; Perktold, J. (2010). <em>statsmodels: Econometric and statistical modeling
+    with Python</em>. Proceedings of the 9th Python in Science Conference.
+    <code>https://www.statsmodels.org</code>. ARIMA/SARIMAX/Holt-Winters implementation (M4).
+  </li>
+  <li>
+    Bitcoin Wiki. <em>Block hashing algorithm</em>.
+    <code>https://en.bitcoin.it/wiki/Block_hashing_algorithm</code>.
+    Reference for 80-byte header structure and byte-order conventions used in M2.
+  </li>
+</ol>
+
+<hr class="rule">
+<div class="page-footer">
+  CryptoChain Analyzer Dashboard &nbsp;·&nbsp; Enrique Santamaría Ruiz (esantrui) &nbsp;·&nbsp;
+  Cryptography AY 2025–26 &nbsp;·&nbsp; Universidad Alfonso X el Sabio
+</div>
+
+</body>
+</html>
