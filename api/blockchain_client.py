@@ -62,14 +62,15 @@ def get_difficulty_history(n_points: int = 100) -> list[dict]:
     return values[-n_points:]
 
 
-def get_blocks_per_day_history(n_points: int = 90) -> list[dict]:
-    """Return daily block count history [{x: unix_ts, y: blocks_per_day}, ...].
+def get_avg_confirmation_time(n_points: int = 90) -> list[dict]:
+    """Return daily average transaction confirmation time [{x: unix_ts, y: minutes}, ...].
 
-    Target is 144 blocks/day (6/hour × 24 hours = 10-min average interval).
-    Actual/target ratio = y / 144; values above 1 mean blocks are coming faster.
+    The confirmation time is the average time from broadcast to first confirmation.
+    Dividing by 10 gives the actual/target block-time ratio (target = 10 minutes).
+    Source: blockchain.info avg-confirmation-time chart.
     """
     response = requests.get(
-        f"{CHARTS_BASE_URL}/charts/n-blocks-per-day",
+        f"{CHARTS_BASE_URL}/charts/avg-confirmation-time",
         params={"timespan": "1year", "format": "json", "sampled": "true"},
         timeout=10,
     )

@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from api.blockchain_client import get_blocks_per_day_history, get_difficulty_history
+from api.blockchain_client import get_avg_confirmation_time, get_difficulty_history
 
 _TARGET_BLOCKS_PER_DAY = 144   # 24 h × 60 min/h / 10 min/block
 _HOVERMODE = "x unified"
@@ -71,56 +71,82 @@ def _render_adjustment_delta(df: pd.DataFrame) -> None:
     st.plotly_chart(fig2, use_container_width=True)
 
 
-def _render_block_time_ratio(bpd_values: list) -> None:
+def _render_block_time_ratio(df: pd.DataFrame, conf_time_values: list) -> None:
+    """Show actual/target block-time ratio.
+
+    Two complementary sources:
+    1. Derived from difficulty: ratio = D[prev] / D[current] at each adjustment event.
+       Formula from the adjustment rule: actual_time / target_time = D_old / D_new.
+    2. Average transaction confirmation time from blockchain.info (corroborating).
+    """
     st.subheader("Actual average block time vs 600-second target")
     st.markdown(
-        "The chart shows the ratio `actual_blocks_per_day / 144`.  \n"
-        "A ratio **above 1** means blocks arrived **faster** than the target.  \n"
-        "A ratio **below 1** means blocks arrived **slower** than the target.  \n"
-        "Difficulty increases when the ratio is consistently above 1, and decreases when below."
+        "**How the ratio is derived:** from the difficulty adjustment formula  \n"
+        "`new_difficulty = old_difficulty × target_time / actual_time`  \n"
+        "→ `actual_block_time / 600 = D_old / D_new` at each adjustment event.  \n"
+        "Green bars = faster than target · Red bars = slower than target."
     )
-    bpd_df = pd.DataFrame(bpd_values)
-    bpd_df["x"] = pd.to_datetime(bpd_df["x"], unit="s")
-    bpd_df = bpd_df.rename(columns={"x": "Date", "y": "BlocksPerDay"})
-    bpd_df["Ratio"] = bpd_df["BlocksPerDay"] / _TARGET_BLOCKS_PER_DAY
-    bpd_df["AvgBlockTime_s"] = 86400 / bpd_df["BlocksPerDay"].replace(0, float("nan"))
 
-    col_r1, col_r2, col_r3 = st.columns(3)
-    col_r1.metric("Avg ratio (period)", f"{bpd_df['Ratio'].mean():.3f}")
-    col_r2.metric("Min avg block time", f"{bpd_df['AvgBlockTime_s'].min():.0f} s")
-    col_r3.metric("Max avg block time", f"{bpd_df['AvgBlockTime_s'].max():.0f} s")
+    # ── Ratio derived from consecutive difficulty values at adjustment events ──
+    adj_df = df[df["is_adjustment"]].copy()
+    if len(adj_df) >= 2:
+        prev_diff = df["Difficulty"].shift(1).loc[adj_df.index]
+        adj_df["Ratio"] = prev_diff / adj_df["Difficulty"]
+        adj_df["AvgBlockTime_s"] = adj_df["Ratio"] * 600
+        adj_df = adj_df.dropna(subset=["Ratio"])
 
-    colors_ratio = [
-        "#10b981" if r >= 1.0 else "#ef4444"
-        for r in bpd_df["Ratio"].fillna(1.0)
-    ]
-    fig3 = make_subplots(
-        rows=2, cols=1, shared_xaxes=True,
-        subplot_titles=("Blocks per day (target = 144)", "Actual / target ratio"),
-        vertical_spacing=0.08,
-    )
-    fig3.add_trace(go.Bar(
-        x=bpd_df["Date"], y=bpd_df["BlocksPerDay"],
-        name="Blocks/day", marker_color="rgba(59,130,246,0.7)",
-    ), row=1, col=1)
-    fig3.add_hline(y=_TARGET_BLOCKS_PER_DAY, line_dash="dot", line_color="#f59e0b",
-                   row=1, col=1, annotation_text="144 target")
-    fig3.add_trace(go.Bar(
-        x=bpd_df["Date"], y=bpd_df["Ratio"],
-        name="Actual/target ratio", marker_color=colors_ratio,
-    ), row=2, col=1)
-    fig3.add_hline(y=1.0, line_dash="dot", line_color="#f59e0b",
-                   row=2, col=1, annotation_text="1.0 = on target")
-    fig3.update_layout(
-        template="plotly_dark", showlegend=False, hovermode=_HOVERMODE, height=500,
-    )
-    fig3.update_yaxes(title_text="Blocks/day", row=1, col=1)
-    fig3.update_yaxes(title_text="Ratio", row=2, col=1)
-    st.plotly_chart(fig3, use_container_width=True)
+        col_r1, col_r2, col_r3 = st.columns(3)
+        col_r1.metric("Mean ratio at adjustments", f"{adj_df['Ratio'].mean():.3f}")
+        col_r2.metric("Fastest period", f"{adj_df['AvgBlockTime_s'].min():.0f} s / block")
+        col_r3.metric("Slowest period", f"{adj_df['AvgBlockTime_s'].max():.0f} s / block")
+
+        colors_ratio = [
+            "#10b981" if r >= 1.0 else "#ef4444"
+            for r in adj_df["Ratio"].fillna(1.0)
+        ]
+        fig3 = go.Figure()
+        fig3.add_trace(go.Bar(
+            x=adj_df["Date"], y=adj_df["Ratio"],
+            name="actual / target ratio", marker_color=colors_ratio,
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Ratio: %{y:.3f}<br>Avg block time: %{customdata:.0f} s<extra></extra>",
+            customdata=adj_df["AvgBlockTime_s"],
+        ))
+        fig3.add_hline(y=1.0, line_dash="dot", line_color="#f59e0b",
+                       annotation_text="1.0 = on target (600 s/block)")
+        fig3.update_layout(
+            title="Actual block time / 600 s target  (at each difficulty adjustment)",
+            xaxis_title="Date", yaxis_title="Ratio",
+            template="plotly_dark", hovermode=_HOVERMODE,
+        )
+        st.plotly_chart(fig3, use_container_width=True)
+
+    # ── Confirmation time chart (corroborating) ───────────────────────────
+    if conf_time_values:
+        ct_df = pd.DataFrame(conf_time_values)
+        ct_df["x"] = pd.to_datetime(ct_df["x"], unit="s")
+        ct_df = ct_df.rename(columns={"x": "Date", "y": "ConfTime_min"})
+        ct_df["Ratio"] = ct_df["ConfTime_min"] / 10.0
+
+        fig4 = go.Figure()
+        fig4.add_trace(go.Scatter(
+            x=ct_df["Date"], y=ct_df["ConfTime_min"],
+            name="Avg confirmation time",
+            line={"color": "#3b82f6", "width": 1.5},
+            fill="tozeroy", fillcolor="rgba(59,130,246,0.06)",
+        ))
+        fig4.add_hline(y=10.0, line_dash="dot", line_color="#f59e0b",
+                       annotation_text="10 min target")
+        fig4.update_layout(
+            title="Average transaction confirmation time (blockchain.info)",
+            xaxis_title="Date", yaxis_title="Minutes",
+            template="plotly_dark", hovermode=_HOVERMODE,
+        )
+        st.plotly_chart(fig4, use_container_width=True)
+        st.caption("Note: confirmation time includes mempool wait and block propagation time — slightly higher than pure inter-block time.")
 
 
 def _load_data(n_points: int, show_ratio: bool) -> bool:
-    """Fetch and cache difficulty + blocks-per-day data. Returns True on success."""
+    """Fetch and cache difficulty + confirmation-time data. Returns True on success."""
     try:
         diff_values = get_difficulty_history(n_points)
         if not diff_values:
@@ -133,9 +159,9 @@ def _load_data(n_points: int, show_ratio: bool) -> bool:
 
     if show_ratio:
         try:
-            st.session_state["m3_bpd"] = get_blocks_per_day_history(n_points)
+            st.session_state["m3_conf"] = get_avg_confirmation_time(n_points)
         except Exception:
-            st.session_state["m3_bpd"] = []
+            st.session_state["m3_conf"] = []
     return True
 
 
@@ -207,8 +233,6 @@ Values above 1 mean faster-than-target mining; values below 1 mean slower.
     _render_difficulty_chart(df, show_ma, log_scale)
     _render_adjustment_delta(df)
 
-    bpd_values = st.session_state.get("m3_bpd", [])
-    if show_ratio and bpd_values:
-        _render_block_time_ratio(bpd_values)
-    elif show_ratio:
-        st.info("Blocks-per-day data unavailable (API may have rate-limited the request).")
+    if show_ratio:
+        conf_values = st.session_state.get("m3_conf", [])
+        _render_block_time_ratio(df, conf_values)
