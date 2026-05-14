@@ -8,7 +8,7 @@ Real-time Bitcoin blockchain intelligence — SHA-256 Proof of Work analysis, di
 
 | Field | Value |
 |---|---|
-| Student Name | Enrique Santamaría Ruiz |
+| Student Name | Enrique Ruiz Santos |
 | GitHub Username | esantrui |
 | Project Title | CryptoChain Analyzer |
 | Chosen AI Approach | Predictor — ARIMA / Ensemble difficulty forecasting |
